@@ -1,0 +1,56 @@
+# ----------------------------------------------------------------------------------
+# SMART GUARDRAILS FOR GEMINI CLI (PROJECT-SPECIFIC & SECURITY-OPTIMIZED)
+# ----------------------------------------------------------------------------------
+
+validators:
+  # 1. Input/Prompt Safety
+  - name: prevent_prompt_injection
+    type: prompt_injection
+    description: "Detects and blocks attempts to manipulate instructions or bypass security."
+    on_fail: reject
+
+  # 2. Data & Privacy (Sensitive Leakage)
+  - name: detect_secrets
+    type: detect_pii
+    entities: ["EMAIL_ADDRESS", "PHONE_NUMBER", "IP_ADDRESS", "API_KEY", "PASSWORD"]
+    on_fail: mask
+    description: "Ensures no API keys, secrets, or internal environment variables are leaked in outputs."
+
+  - name: ignore_sensitive_files
+    type: path_traversal
+    description: "Blocks access to system files, root-level configs, and git history outside the workspace."
+    on_fail: reject
+
+  # 3. Code & Operational Safety (Internal only)
+  - name: malicious_code_checker
+    type: static_analysis
+    on_fail: filter
+    description: "Allows complex logic but prevents execution of commands that attempt system-level destruction (e.g., rm -rf /)."
+
+  # 4. Data Format & Integrity (Legacy)
+  - name: data_schema_validation
+    type: json_schema
+    on_fail: fix
+
+  - name: numerical_stability
+    type: float
+    min: -1e12
+    max: 1e12
+    on_fail: fix
+
+  - name: model_output_safety
+    type: regex
+    pattern: "^[0-9eE.+-]+$"
+    on_fail: filter
+
+  - name: remove_nan_inf
+    type: no_nan
+    on_fail: fix
+
+# ----------------------------------------------------------------------------------
+# Operational Policy: "CLI Full-Access, Outside-Protection"
+# ----------------------------------------------------------------------------------
+policy:
+  mode: active
+  allow_self_repair: true
+  enable_feedback_loop: true
