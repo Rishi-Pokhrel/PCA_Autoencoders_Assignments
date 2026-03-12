@@ -56,3 +56,6 @@ setup_env.sh
 
 #configuration files
 *.yaml
+
+# gitignore as well
+.gitignore
